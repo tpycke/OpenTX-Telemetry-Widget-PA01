@@ -500,8 +500,15 @@ function inav.run(event, touchState)
 	if TX16S and touchState and event ~= nil and event ~= 0 then
 		if event == EVT_TOUCH_TAP then
 			if data.configStatus > 0 then
-				-- In config menu, treat tap as enter
-				event = EVT_ENTER_BREAK
+				-- In config menu: tap to select row or toggle edit
+				local tapped = data.configTop + math.floor((touchState.y - 37) / 22)
+				if tapped >= 1 and tapped <= #config and tapped ~= data.configStatus then
+					data.configStatus = tapped
+					data.configSelect = 0
+					event = 0
+				else
+					event = EVT_ENTER_BREAK
+				end
 			elseif touchState.y < 277 then
 				-- Tap on upper area: toggle max/min values
 				if not data.armed then
@@ -518,6 +525,18 @@ function inav.run(event, touchState)
 				event = EVT_VIRTUAL_NEXT
 			elseif touchState.swipeDown then
 				event = EVT_VIRTUAL_PREV
+			elseif touchState.slideY then
+				-- Accumulate drag distance for continuous scroll
+				data.touchAccumY = (data.touchAccumY or 0) + touchState.slideY
+				if data.touchAccumY > 30 then
+					event = EVT_VIRTUAL_NEXT
+					data.touchAccumY = 0
+				elseif data.touchAccumY < -30 then
+					event = EVT_VIRTUAL_PREV
+					data.touchAccumY = 0
+				else
+					event = 0
+				end
 			else
 				event = 0
 			end
