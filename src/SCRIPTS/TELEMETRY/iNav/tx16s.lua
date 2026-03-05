@@ -538,45 +538,45 @@ local function view(data, config, modes, dir, units, labels, gpsDegMin, hdopGrap
 				data.fc = rgb(red, green, 60)
 				data.fl = data.fuel
 			end
-			lcd.drawGauge(0, TOP + 36, X1 - 3, 18, min(data.fuel, 99), 100, data.set_flags(0, data.fc))
+			lcd.drawGauge(0, TOP + 40, X1 - 3, 18, min(data.fuel, 99), 100, data.set_flags(0, data.fc))
 		end
-		text(0, TOP + ((config[23].v > 0 or (data.crsf and data.showMax)) and 28 or 14), labels[1], data.set_flags(0, data.TextColor))
+		text(0, TOP + ((config[23].v > 0 or (data.crsf and data.showMax)) and 26 or 12), labels[1], data.set_flags(0, data.TextColor))
 	end
 
 	local val = math.floor((data.showMax and data.cellMin or data.cell) * 100 + 0.5) * 0.01
-	text(X1 - 3, TOP + 54, frmt(config[1].v == 0 and "%.2fV" or "%.1fV", config[1].v == 0 and val or (data.showMax and data.battMin or data.batt)), data.set_flags(MIDSIZE + RIGHT,tmp))
-	text(0, TOP + 66, labels[2], data.set_flags(0, data.TextColor))
+	text(X1, TOP + 62, frmt(config[1].v == 0 and "%.2fV" or "%.1fV", config[1].v == 0 and val or (data.showMax and data.battMin or data.batt)), data.set_flags(MIDSIZE + RIGHT,tmp))
+	text(0, TOP + 72, labels[2], data.set_flags(0, data.TextColor))
 	if data.bl ~= val then
 		local red = val >= config[2].v and max(floor((4.2 - val) / (4.2 - config[2].v) * 255), 0) or 255
 		local green = val < config[2].v and max(floor((val - config[3].v) / (config[2].v - config[3].v) * 255), 0) or 255
 		data.bc = rgb(red, green, 60)
 		data.bl = val
 	end
-	lcd.drawGauge(0, TOP + 88, X1 - 3, 18, min(max(val - config[3].v + 0.1, 0) * (100 / (4.2 - config[3].v + 0.1)), 99), 100, data.set_flags(0,data.bc))
+	lcd.drawGauge(0, TOP + 102, X1, 18, min(max(val - config[3].v + 0.1, 0) * (100 / (4.2 - config[3].v + 0.1)), 99), 100, data.set_flags(0,data.bc))
 
 	tmp = (not data.telem or data.rssi < data.rssiLow) and RED or data.TextColor
 	val = data.showMax and data.rssiMin or data.rssiLast
-	text(X1 - 3, TOP + 106, val .. (data.crsf and "%" or "dB"), data.set_flags(MIDSIZE + RIGHT,tmp))
-	text(0, TOP + 118, data.crsf and "LQ" or "RSSI", data.set_flags(0, data.TextColor))
+	text(X1, TOP + 122, val .. (data.crsf and "%" or "dB"), data.set_flags(MIDSIZE + RIGHT,tmp))
+	text(0, TOP + 130, data.crsf and "LQ" or "RSSI", data.set_flags(0, data.TextColor))
 	if data.rl ~= val then
 		local red = val >= data.rssiLow and max(floor((100 - val) / (100 - data.rssiLow) * 255), 0) or 255
 		local green = val < data.rssiLow and max(floor((val - data.rssiCrit) / (data.rssiLow - data.rssiCrit) * 255), 0) or 255
 		data.rc = rgb(red, green, 60)
 		data.rl = val
 	end
-	lcd.drawGauge(0, TOP + 140, X1 - 3, 18, min(val, 99), 100, data.set_flags(0, data.rc))
+	lcd.drawGauge(0, TOP + 162, X1, 18, min(val, 99), 100, data.set_flags(0, data.rc))
 
 	-- Box 2 (altitude, distance, current)
 	tmp = data.showMax and data.altitudeMax or data.altitude
-	text(X1 + 12, TOP + 4, labels[4], data.set_flags(0, data.TextColor))
+	text(X1 + 16, TOP + 30, labels[4], data.set_flags(0, data.TextColor))
 	text(X2, TOP + 18, floor(tmp + 0.5) .. units[data.alt_unit], data.set_flags(MIDSIZE + RIGHT,((not data.telem or tmp + 0.5 >= config[6].v) and RED or data.TextColor)))
 	tmp2 = data.showMax and data.distanceMax or data.distanceLast
 	tmp = tmp2 < 1000 and floor(tmp2 + 0.5) .. units[data.dist_unit] or (frmt("%.1f", tmp2 / (data.dist_unit == 9 and 1000 or 5280)) .. (data.dist_unit == 9 and "km" or "mi"))
-	text(X1 + 12, TOP + 56, labels[5], data.set_flags(0, data.TextColor))
+	text(X1 + 16, TOP + 78, labels[5], data.set_flags(0, data.TextColor))
 	text(X2, TOP + 70, tmp, data.set_flags(MIDSIZE + RIGHT, telemCol))
 	if data.showCurr then
 		tmp = data.showMax and data.currentMax or data.current
-		text(X1 + 12, TOP + 108, labels[3], data.set_flags(0, data.TextColor))
+		text(X1 + 16, TOP + 132, labels[3], data.set_flags(0, data.TextColor))
 		text(X2, TOP + 122, (tmp >= 99.5 and floor(tmp + 0.5) or frmt("%.1fA", tmp)), data.set_flags(MIDSIZE + RIGHT, telemCol))
 	end
 
@@ -595,7 +595,7 @@ local function view(data, config, modes, dir, units, labels, gpsDegMin, hdopGrap
 		   text(tmp, TOP + 22, dir[0], data.set_flags(CENTERED, data.TextColor))
 		   text(X3 - 6, TOP + 120, dir[2], data.set_flags(RIGHT, data.TextColor))
 		   text(X2 + 14, TOP + 120, dir[6], data.set_flags(0, data.TextColor))
-			text(tmp + 4, BOTTOM - 21, floor(data.heading + 0.5) % 360 .. DEGSYM, data.set_flags(CENTERED, telemCol))
+           text(tmp + 4, BOTTOM - 26, floor(data.heading + 0.5) % 360 .. DEGSYM, data.set_flags(CENTERED, telemCol))
 		end
 		local compassY = TOP + 125
 		local x1, y1, x2, y2, x3, y3 = calcDir(r1, r2, r3, tmp, compassY, 45)
@@ -612,9 +612,9 @@ local function view(data, config, modes, dir, units, labels, gpsDegMin, hdopGrap
 	-- Box 4 (GPS info, speed)
 	if data.crsf then
 		if data.tpwr then
-		   text(RIGHT_POS - 3, TOP + 2, data.tpwr .. "mW", data.set_flags(RIGHT + MIDSIZE, telemCol))
+		   text(RIGHT_POS - 4, TOP + 2, data.tpwr .. "mW", data.set_flags(RIGHT + MIDSIZE, telemCol))
 		end
-		text(RIGHT_POS - 3, TOP + 34, data.satellites % 100, data.set_flags(MIDSIZE + RIGHT, telemCol))
+		text(RIGHT_POS - 4, TOP + 34, data.satellites % 100, data.set_flags(MIDSIZE + RIGHT, telemCol))
 	else
 		tmp = ((data.armed or data.modeId == 6) and data.hdop < 11 - config[21].v * 2) or not data.telem
 		text(X3 + 60, TOP + 2, (data.hdop == 0 and not data.gpsFix) and "-- --" or (9 - data.hdop) * 0.5 + 0.8, data.set_flags(MIDSIZE + RIGHT, (tmp and RED or data.TextColor)))
@@ -624,13 +624,13 @@ local function view(data, config, modes, dir, units, labels, gpsDegMin, hdopGrap
 	hdopGraph(X3 + 80, TOP + (data.crsf and 62 or 30))
 	tmp = ((not data.telem or not data.gpsFix) and RED or data.TextColor)
 	if not data.crsf then
-	   text(RIGHT_POS - 3, TOP + 34, floor(data.gpsAlt + 0.5) .. (data.gpsAlt_unit == 10 and "'" or units[data.gpsAlt_unit]), data.set_flags(MIDSIZE+RIGHT, tmp))
+	   text(RIGHT_POS - 4, TOP + 34, floor(data.gpsAlt + 0.5) .. (data.gpsAlt_unit == 10 and "'" or units[data.gpsAlt_unit]), data.set_flags(MIDSIZE+RIGHT, tmp))
 	end
 	local pcol = data.set_flags(RIGHT, tmp)
-	text(RIGHT_POS - 3, TOP + 66, config[16].v == 0 and frmt("%.6f", data.gpsLatLon.lat) or gpsDegMin(data.gpsLatLon.lat, true), pcol)
-	text(RIGHT_POS - 3, TOP + 90, config[16].v == 0 and frmt("%.6f", data.gpsLatLon.lon) or gpsDegMin(data.gpsLatLon.lon, false), pcol)
+	text(RIGHT_POS - 4, TOP + 66, config[16].v == 0 and frmt("%.6f", data.gpsLatLon.lat) or gpsDegMin(data.gpsLatLon.lat, true), pcol)
+	text(RIGHT_POS - 4, TOP + 90, config[16].v == 0 and frmt("%.6f", data.gpsLatLon.lon) or gpsDegMin(data.gpsLatLon.lon, false), pcol)
 	tmp = data.showMax and data.speedMax or data.speed
-	text(RIGHT_POS - 3, TOP + 122, tmp >= 99.5 and floor(tmp + 0.5) .. units[data.speed_unit] or frmt("%.1f", tmp) .. units[data.speed_unit], data.set_flags(MIDSIZE + RIGHT, telemCol))
+	text(RIGHT_POS - 4, TOP + 122, tmp >= 99.5 and floor(tmp + 0.5) .. units[data.speed_unit] or frmt("%.1f", tmp) .. units[data.speed_unit], data.set_flags(MIDSIZE + RIGHT, telemCol))
 
 	-- Dividers
 	local dkgcol = data.set_flags(0, DKGREY)
