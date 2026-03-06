@@ -87,8 +87,9 @@ local function view(data, config, modes, dir, units, labels, gpsDegMin, hdopGrap
 		end
 	end
 
-	-- Setup: draw sky background (bg.png is 480x126, too small for 800x480 AI area)
+	-- Setup: draw sky background (bg.png is 480x126, too small for 800x480 area)
 	fill(0, TOP, RIGHT_POS, BOTTOM - TOP, data.set_flags(0, SKY))
+    -- fill(RIGHT_POS, TOP, RIGHT_POS, BOTTOM - TOP, data.set_flags(0, LIGHTMAP))
 
 	-- Calculate orientation
 	if data.pitchRoll then
@@ -379,9 +380,11 @@ local function view(data, config, modes, dir, units, labels, gpsDegMin, hdopGrap
 	-- Speed & altitude readouts (MIDSIZE with outline for 800x480)
 	tmp = data.showMax and data.speedMax or data.speed
 	local telemCol = data.telem and data.TextColor or RED
-
+    fill(0, Y_CNTR - 10, 65, 30, data.set_flags(0, DKGREY))
 	otext(62, Y_CNTR - 16, tmp >= 99.5 and floor(tmp + 0.5) or frmt("%.1f", tmp), MIDSIZE + RIGHT, telemCol)
+
 	tmp = data.showMax and data.altitudeMax or data.altitude
+    fill(RIGHT_POS - 67, Y_CNTR - 10, 67, 30, data.set_flags(0, DKGREY))
 	otext(RIGHT_POS - 2, Y_CNTR - 16, floor(tmp + 0.5), MIDSIZE + RIGHT, ((not data.telem or tmp + 0.5 >= config[6].v) and RED or data.TextColor))
 	if data.altHold then
 		bmap(icons.lock, RIGHT_POS - 80, Y_CNTR - 7)
@@ -389,6 +392,7 @@ local function view(data, config, modes, dir, units, labels, gpsDegMin, hdopGrap
 
 	-- Heading
 	if data.showHead then
+        fill(X_CNTR - 36, bot2 - 18, 68, 30, data.set_flags(0, DKGREY))
 		otext(X_CNTR + 30, bot2 - 24, floor(data.heading + 0.5) % 360 .. DEGSYM, MIDSIZE + RIGHT, telemCol)
 	end
 
@@ -434,6 +438,9 @@ local function view(data, config, modes, dir, units, labels, gpsDegMin, hdopGrap
 	-- Radar
 	local LEFT_POS = RIGHT_POS + (config[7].v % 2 == 1 and 15 or 0)
 	RIGHT_POS = 799
+
+    fill(LEFT_POS, TOP, RIGHT_POS, BOTTOM -TOP, data.set_flags(0, LIGHTMAP))
+
 	X_CNTR = (RIGHT_POS + LEFT_POS) * 0.5 - 1
 	if data.startup == 0 then
 		-- Launch/north-based orientation
