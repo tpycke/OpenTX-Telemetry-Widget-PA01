@@ -137,7 +137,12 @@ local function view(data, config, modes, dir, units, labels, gpsDegMin, hdopGrap
 
 	-- Draw ground
 	local gflag = data.set_flags(0, GROUND)
-	if skip then
+	local fixedHorizon = config[36].v == 1
+	if fixedHorizon then
+		-- Fixed horizon: flat ground below center
+		fill(tl.x, Y_CNTR, br.x - tl.x + 1, br.y - Y_CNTR + 1, gflag)
+		line(tl.x, Y_CNTR, br.x, Y_CNTR, SOLID, data.set_flags(0, LIGHTGREY))
+	elseif skip then
 		-- Must be going down hard!
 		if (pitch - 90) * (upsideDown and -1 or 1) < 0 then
 		   fill(tl.x, tl.y, br.x - tl.x + 1, br.y - tl.y + 1, gflag)
@@ -237,10 +242,12 @@ local function view(data, config, modes, dir, units, labels, gpsDegMin, hdopGrap
 	-- Pitch ladder
 	if data.telem then
 	   tmp = pitch - 90
-		local tmp2 = max(min((tmp >= 0 and floor(tmp * 0.2) or math.ceil(tmp * 0.2)) * 5, 30), -30)
-		for x = tmp2 - 20, tmp2 + 20, 5 do
-			if x ~= 0 and (x % 10 == 0 or (x > -30 and x < 30)) then
-				pitchLadder(x % 10 == 0 and 20 or 15, x)
+		if not fixedHorizon then
+			local tmp2 = max(min((tmp >= 0 and floor(tmp * 0.2) or math.ceil(tmp * 0.2)) * 5, 30), -30)
+			for x = tmp2 - 20, tmp2 + 20, 5 do
+				if x ~= 0 and (x % 10 == 0 or (x > -30 and x < 30)) then
+					pitchLadder(x % 10 == 0 and 20 or 15, x)
+				end
 			end
 		end
 
@@ -324,8 +331,35 @@ local function view(data, config, modes, dir, units, labels, gpsDegMin, hdopGrap
 		end
 	end
 
-	-- View overlay
-	bmap(icons.fg, 1, 20)
+	-- View overlay / aircraft symbol
+	if fixedHorizon then
+		-- Fixed horizon mode: aircraft symbol moves with pitch/roll
+		local py = Y_CNTR - (pitch - 90) * DEGV / 90
+		py = max(TOP + 10, min(BOTTOM - 10, py))
+		local r = rad(roll - 90)
+		local s, c = sin(r), cos(r)
+		local wing = 35
+		local ycol = data.set_flags(0, OYELLOW)
+		local oc = data.set_flags(0, BLACK)
+		-- Rotated wings (with black outline)
+		for d = -1, 1 do
+			local col = d == 0 and ycol or oc
+			line(X_CNTR - s * wing, py + c * wing + d, X_CNTR - s * 8, py + c * 8 + d, SOLID, col)
+			line(X_CNTR + s * 8, py - c * 8 + d, X_CNTR + s * wing, py - c * wing + d, SOLID, col)
+		end
+		-- Tail
+		local tail = 15
+		local tx, ty = -c * tail, -s * tail
+		for d = -1, 1 do
+			local col = d == 0 and ycol or oc
+			line(X_CNTR, py + d, X_CNTR + tx, py + ty + d, SOLID, col)
+		end
+		-- Center dot
+		fill(X_CNTR - 2, py - 2, 5, 5, oc)
+		fill(X_CNTR - 1, py - 1, 3, 3, ycol)
+	else
+		bmap(icons.fg, 1, 20)
+	end
 
 	-- Speed & altitude
 	tmp = data.showMax and data.speedMax or data.speed
