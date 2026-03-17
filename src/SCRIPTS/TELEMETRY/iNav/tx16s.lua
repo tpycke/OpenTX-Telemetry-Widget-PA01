@@ -7,7 +7,8 @@ local function view(data, config, modes, dir, units, labels, gpsDegMin, hdopGrap
 	local rgb = data.RGB
 	local SKY = rgb(0, 121, 180)
 	local GROUND = rgb(98, 68, 8)
-	local LIGHTMAP = rgb(0, 150, 0)
+    local MAP = rgb(0, 100, 0)
+	local LIGHTMAP = rgb(20, 180, 20)
 	local DKGREY = rgb(48, 56, 65)
 	local RIGHT_POS = 520
 	local X_CNTR = 259 --(RIGHT_POS + LEFT_POS [0]) / 2 - 1
@@ -89,7 +90,6 @@ local function view(data, config, modes, dir, units, labels, gpsDegMin, hdopGrap
 
 	-- Setup: draw sky background (bg.png is 480x126, too small for 800x480 area)
 	fill(0, TOP, RIGHT_POS, BOTTOM - TOP, data.set_flags(0, SKY))
-    -- fill(RIGHT_POS, TOP, RIGHT_POS, BOTTOM - TOP, data.set_flags(0, LIGHTMAP))
 
 	-- Calculate orientation
 	if data.pitchRoll then
@@ -381,10 +381,12 @@ local function view(data, config, modes, dir, units, labels, gpsDegMin, hdopGrap
 	tmp = data.showMax and data.speedMax or data.speed
 	local telemCol = data.telem and data.TextColor or RED
     fill(0, Y_CNTR - 10, 65, 30, data.set_flags(0, DKGREY))
+	rect(0, Y_CNTR - 10, 65, 30, data.set_flags(0, WHITE))
 	otext(62, Y_CNTR - 16, tmp >= 99.5 and floor(tmp + 0.5) or frmt("%.1f", tmp), MIDSIZE + RIGHT, telemCol)
 
 	tmp = data.showMax and data.altitudeMax or data.altitude
     fill(RIGHT_POS - 67, Y_CNTR - 10, 67, 30, data.set_flags(0, DKGREY))
+	rect(RIGHT_POS - 67, Y_CNTR - 10, 67, 30, data.set_flags(0, WHITE))
 	otext(RIGHT_POS - 2, Y_CNTR - 16, floor(tmp + 0.5), MIDSIZE + RIGHT, ((not data.telem or tmp + 0.5 >= config[6].v) and RED or data.TextColor))
 	if data.altHold then
 		bmap(icons.lock, RIGHT_POS - 80, Y_CNTR - 7)
@@ -393,6 +395,7 @@ local function view(data, config, modes, dir, units, labels, gpsDegMin, hdopGrap
 	-- Heading
 	if data.showHead then
         fill(X_CNTR - 36, bot2 - 18, 68, 30, data.set_flags(0, DKGREY))
+		rect(X_CNTR - 36, bot2 - 18, 68, 30, data.set_flags(0, WHITE))
 		otext(X_CNTR + 30, bot2 - 24, floor(data.heading + 0.5) % 360 .. DEGSYM, MIDSIZE + RIGHT, telemCol)
 	end
 
@@ -439,7 +442,7 @@ local function view(data, config, modes, dir, units, labels, gpsDegMin, hdopGrap
 	local LEFT_POS = RIGHT_POS + (config[7].v % 2 == 1 and 15 or 0)
 	RIGHT_POS = 799
 
-    fill(LEFT_POS, TOP, RIGHT_POS, BOTTOM -TOP, data.set_flags(0, LIGHTMAP))
+    fill(LEFT_POS, TOP, RIGHT_POS, BOTTOM -TOP, data.set_flags(0, MAP))
 
 	X_CNTR = (RIGHT_POS + LEFT_POS) * 0.5 - 1
 	if data.startup == 0 then
@@ -463,7 +466,7 @@ local function view(data, config, modes, dir, units, labels, gpsDegMin, hdopGrap
 				if (i - 1) % (60 / config[28].v) == 0 then
 				   mcol = data.set_flags(0, DKGREY)
 				   line(cx, BOTTOM - 60, cx, BOTTOM - 1, DOTTED, mcol)
-				   mcol = LIGHTMAP
+				   mcol = data.set_flags(0, LIGHTMAP)
 				end
 			end
 			if data.altMin < -1 then
@@ -575,16 +578,16 @@ local function view(data, config, modes, dir, units, labels, gpsDegMin, hdopGrap
 
 	-- Box 2 (altitude, distance, current)
 	tmp = data.showMax and data.altitudeMax or data.altitude
-	text(X1 + 16, TOP + 30, labels[4], data.set_flags(0, data.TextColor))
-	text(X2, TOP + 18, floor(tmp + 0.5) .. units[data.alt_unit], data.set_flags(MIDSIZE + RIGHT,((not data.telem or tmp + 0.5 >= config[6].v) and RED or data.TextColor)))
+	text(X1 + 16, TOP + 18, labels[4], data.set_flags(0, data.TextColor))
+	text(X2, TOP + 30, floor(tmp + 0.5) .. units[data.alt_unit], data.set_flags(MIDSIZE + RIGHT,((not data.telem or tmp + 0.5 >= config[6].v) and RED or data.TextColor)))
 	tmp2 = data.showMax and data.distanceMax or data.distanceLast
 	tmp = tmp2 < 1000 and floor(tmp2 + 0.5) .. units[data.dist_unit] or (frmt("%.1f", tmp2 / (data.dist_unit == 9 and 1000 or 5280)) .. (data.dist_unit == 9 and "km" or "mi"))
-	text(X1 + 16, TOP + 78, labels[5], data.set_flags(0, data.TextColor))
-	text(X2, TOP + 70, tmp, data.set_flags(MIDSIZE + RIGHT, telemCol))
+	text(X1 + 16, TOP + 66, labels[5], data.set_flags(0, data.TextColor))
+	text(X2, TOP + 82, tmp, data.set_flags(MIDSIZE + RIGHT, telemCol))
 	if data.showCurr then
 		tmp = data.showMax and data.currentMax or data.current
-		text(X1 + 16, TOP + 132, labels[3], data.set_flags(0, data.TextColor))
-		text(X2, TOP + 122, (tmp >= 99.5 and floor(tmp + 0.5) or frmt("%.1fA", tmp)), data.set_flags(MIDSIZE + RIGHT, telemCol))
+		text(X1 + 16, TOP + 120, labels[3], data.set_flags(0, data.TextColor))
+		text(X2, TOP + 134, (tmp >= 99.5 and floor(tmp + 0.5) or frmt("%.1fA", tmp)), data.set_flags(MIDSIZE + RIGHT, telemCol))
 	end
 
 	-- Box 3 (flight modes, orientation)
