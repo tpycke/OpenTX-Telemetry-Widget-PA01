@@ -539,7 +539,7 @@ local function view(data, config, modes, dir, units, labels, gpsDegMin, hdopGrap
 	tmp = (not data.telem or data.cell < config[3].v or (data.showFuel and config[23].v == 0 and data.fuel <= config[17].v)) and RED or data.TextColor
 	if data.showFuel then
 		if config[23].v > 0 or (data.crsf and data.showMax) then
-		   text(X1, TOP + 4, (data.crsf and data.fuelRaw or data.fuel) .. data.fUnit[data.crsf and 1 or config[23].v], data.set_flags(MIDSIZE + RIGHT, tmp))
+		   text(X1, TOP + 2, (data.crsf and data.fuelRaw or data.fuel) .. data.fUnit[data.crsf and 1 or config[23].v], data.set_flags(MIDSIZE + RIGHT, tmp))
 		else
 		   text(X1 - 3, TOP + 2, data.fuel .. "%", data.set_flags(MIDSIZE + RIGHT, tmp))
 			if data.fl ~= data.fuel then
