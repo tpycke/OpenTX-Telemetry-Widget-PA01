@@ -394,8 +394,8 @@ local function view(data, config, modes, dir, units, labels, gpsDegMin, hdopGrap
 
 	-- Heading
 	if data.showHead then
-        fill(X_CNTR - 36, bot2 - 18, 68, 30, data.set_flags(0, DKGREY))
-		rect(X_CNTR - 36, bot2 - 18, 68, 30, data.set_flags(0, WHITE))
+        fill(X_CNTR - 42, bot2 - 18, 72, 30, data.set_flags(0, DKGREY))
+		rect(X_CNTR - 42, bot2 - 18, 72, 30, data.set_flags(0, WHITE))
 		otext(X_CNTR + 30, bot2 - 24, floor(data.heading + 0.5) % 360 .. DEGSYM, MIDSIZE + RIGHT, telemCol)
 	end
 
