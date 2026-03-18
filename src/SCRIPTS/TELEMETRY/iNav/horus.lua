@@ -137,7 +137,7 @@ local function view(data, config, modes, dir, units, labels, gpsDegMin, hdopGrap
 
 	-- Draw ground
 	local gflag = data.set_flags(0, GROUND)
-	local fixedHorizon = config[36].v == 1
+	local fixedHorizon = config[36] ~= nil and config[36].v == 1
 	if fixedHorizon then
 		-- Fixed horizon: flat ground below center
 		fill(tl.x, Y_CNTR, br.x - tl.x + 1, br.y - Y_CNTR + 1, gflag)
@@ -338,21 +338,22 @@ local function view(data, config, modes, dir, units, labels, gpsDegMin, hdopGrap
 		py = max(TOP + 10, min(BOTTOM - 10, py))
 		local r = rad(roll - 90)
 		local s, c = sin(r), cos(r)
-		local wing = 35
+		local wing = 40
+		local gap = 8
 		local ycol = data.set_flags(0, OYELLOW)
 		local oc = data.set_flags(0, BLACK)
-		-- Rotated wings (with black outline)
-		for d = -1, 1 do
-			local col = d == 0 and ycol or oc
-			line(X_CNTR - s * wing, py + c * wing + d, X_CNTR - s * 8, py + c * 8 + d, SOLID, col)
-			line(X_CNTR + s * 8, py - c * 8 + d, X_CNTR + s * wing, py - c * wing + d, SOLID, col)
+		-- Wing bars: perpendicular-offset lines for thickness (5px: 3 yellow + 2 black outline)
+		for d = -2, 2 do
+			local col = (d > -2 and d < 2) and ycol or oc
+			local ox, oy = -s * d, c * d
+			line(X_CNTR - c * wing + ox, py + s * wing + oy, X_CNTR - c * gap + ox, py + s * gap + oy, SOLID, col)
+			line(X_CNTR + c * gap + ox, py - s * gap + oy, X_CNTR + c * wing + ox, py - s * wing + oy, SOLID, col)
 		end
-		-- Tail
+		-- Tail (points up from center when level)
 		local tail = 15
-		local tx, ty = -c * tail, -s * tail
 		for d = -1, 1 do
 			local col = d == 0 and ycol or oc
-			line(X_CNTR, py + d, X_CNTR + tx, py + ty + d, SOLID, col)
+			line(X_CNTR, py + d, X_CNTR - s * tail, py - c * tail + d, SOLID, col)
 		end
 		-- Center dot
 		fill(X_CNTR - 2, py - 2, 5, 5, oc)

@@ -98,7 +98,7 @@ local function view(data, config, modes, dir, units, labels, gpsDegMin, hdopGrap
 		upsideDown = data.accz < 0
 	end
 	roll1 = math.rad(roll)
-	local fixedHorizon = config[36].v == 1
+	local fixedHorizon = config[36] ~= nil and config[36].v == 1
 	if data.startup == 0 and data.telem then
 		tmp = pitch - 90
 		if not fixedHorizon then
@@ -203,17 +203,23 @@ local function view(data, config, modes, dir, units, labels, gpsDegMin, hdopGrap
 		local w = SMLCD and 10 or 18
 		local lf = SMLCD and 0 or FORCE
 		-- Erase area around aircraft symbol
-		fill(X_CNTR - w - 2, py - w - 2, w * 2 + 5, w * 2 + 5, ERASE)
+		local et = math.max(8, py - w - 2)
+		fill(X_CNTR - w - 2, et, w * 2 + 5, math.min(64, py + w + 2) - et + 1, ERASE)
 		-- Redraw ground behind symbol if needed
 		if py + w + 2 > 35 then
 			local gt = math.max(36, py - w - 2)
 			fill(X_CNTR - w - 2, gt, w * 2 + 5, math.min(64, py + w + 2) - gt, gcolor)
 		end
-		-- Rotated wing lines
-		line(X_CNTR - s * w, py + c * w, X_CNTR + s * w, py - c * w, SOLID, lf)
+		-- Rotated wing lines (perpendicular thickness)
+		local gap = SMLCD and 3 or 5
+		for d = -1, 1 do
+			local ox, oy = -s * d, c * d
+			line(X_CNTR - c * w + ox, py + s * w + oy, X_CNTR - c * gap + ox, py + s * gap + oy, SOLID, lf)
+			line(X_CNTR + c * gap + ox, py - s * gap + oy, X_CNTR + c * w + ox, py - s * w + oy, SOLID, lf)
+		end
 		-- Tail line
 		local tail = SMLCD and 6 or 10
-		line(X_CNTR, py, X_CNTR - c * tail, py - s * tail, SOLID, lf)
+		line(X_CNTR, py, X_CNTR - s * tail, py - c * tail, SOLID, lf)
 		-- Center dot
 		line(X_CNTR - 1, py, X_CNTR + 1, py, SOLID, lf)
 		if SMLCD then
