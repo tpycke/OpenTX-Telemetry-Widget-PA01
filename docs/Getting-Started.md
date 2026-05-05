@@ -37,14 +37,23 @@ Don't be too concerned about the length of these instructions. The first two sec
         1. In model setup, page to `DISPLAY`
         1. Set desired screen to `Script`
         1. Select `iNav`
-    * Horus/Jumper T16:
+    * Horus/Jumper T16 (EdgeTX before v2.11):
         1. Long-press `TELE` to access the user interface/views layout
         1. Select the desired view (or create a new one)
         1. Make `Layout` full screen, turn off `Top bar` and `Sliders+Trims`
         1. Select `Setup widgets`
         1. Press `Enter` till a menu appears and select `Select widget`
         1. Scroll to the `iNav` widget and press `Enter`
-        1. Optionally (while still selecting the `iNAV` script), long-press `Enter`, select `Widget settings` where you can enable `Restore` (to restore your theme's colors) and set your theme's `Text` color and `Warning` color
+        1. Optionally (while still selecting the `iNAV` script), long-press `Enter`, select `Widget settings` where you can set your theme's `Text` color and `Warning` color
+    * RadioMaster TX16S and other color touchscreen radios (EdgeTX v2.11+):
+        1. Long-press `TELE` to access the user interface/views layout
+        1. Select the desired view (or create a new one)
+        1. Choose the `App Mode` layout (not `Full screen`) — this allows the widget to receive key and touch events and automatically hides the top bar and sliders/trims
+        1. Long-press `Enter` (jog wheel) — it may take more than one long-press for the widget selection menu to appear
+        1. Select `Select widget`, scroll to `iNav` and press `Enter`
+        1. Optionally, long-press `Enter`, select `Widget settings` to set your theme's `Text` color and `Warning` color
+        1. Press `RTN` to exit setup
+        1. After a reboot, you may need to long-press the jog wheel or long-touch the screen to re-enter app mode (events are not passed to the widget until app mode is active)
     * Nirvana NV14:
         1. Press the Widgets icon
         1. Select the desired view

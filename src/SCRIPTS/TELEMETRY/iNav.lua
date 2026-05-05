@@ -7,6 +7,7 @@ local FILE_PATH = "/SCRIPTS/TELEMETRY/iNav/"
 local SMLCD = LCD_W < 212
 local HORUS = LCD_W >= 480 or LCD_H >= 480
 local TX15 = LCD_W == 480 and LCD_H == 320
+local TX16S = LCD_W >= 800 and LCD_H >= 480
 local tmp, view, lang, playLog
 local env = "bt" -- compile on platform
 local inav = {}
@@ -454,7 +455,7 @@ function inav.background()
 	data.bkgd = true
 end
 
-function inav.run(event)
+function inav.run(event, touchState)
 	--[[ Show FPS
 	data.start = getTime()
 	]]
@@ -493,6 +494,56 @@ function inav.run(event)
 		return 0
 	end
 	]]
+
+	-- Touch event handling (TX16S and other touchscreen radios)
+	-- Must run before config menu check so touch works in both menu and views
+	if TX16S and touchState and event ~= nil and event ~= 0 then
+		if event == EVT_TOUCH_TAP then
+			if data.configStatus > 0 then
+				-- In config menu: tap to select row or toggle edit
+				local tapped = data.configTop + math.floor((touchState.y - 37) / 22)
+				if tapped >= 1 and tapped <= #config and tapped ~= data.configStatus then
+					data.configStatus = tapped
+					data.configSelect = 0
+					event = 0
+				else
+					event = EVT_ENTER_BREAK
+				end
+			elseif touchState.y < 277 then
+				-- Tap on upper area: toggle max/min values
+				if not data.armed then
+					data.showMax = not data.showMax
+				end
+				data.showDir = not data.showDir
+				event = 0
+			else
+				-- Tap on data area: enter config menu
+				event = MENU
+			end
+		elseif event == EVT_TOUCH_SLIDE then
+			if touchState.swipeUp then
+				event = EVT_VIRTUAL_NEXT
+			elseif touchState.swipeDown then
+				event = EVT_VIRTUAL_PREV
+			elseif touchState.slideY then
+				-- Accumulate drag distance for continuous scroll
+				data.touchAccumY = (data.touchAccumY or 0) + touchState.slideY
+				if data.touchAccumY > 30 then
+					event = EVT_VIRTUAL_NEXT
+					data.touchAccumY = 0
+				elseif data.touchAccumY < -30 then
+					event = EVT_VIRTUAL_PREV
+					data.touchAccumY = 0
+				else
+					event = 0
+				end
+			else
+				event = 0
+			end
+		else
+			event = 0
+		end
+	end
 
 	-- Config menu or views
 	if data.configStatus > 0 then
@@ -538,7 +589,7 @@ function inav.run(event)
 		if data.v ~= config[25].v then
 		    view = nil
 		    collectgarbage()
-		    view = loadScript(FILE_PATH .. (HORUS and (TX15 and "tx15" or (data.nv and "nirvana" or "horus")) or (config[25].v == 0 and "view" or (config[25].v == 1 and "pilot" or (config[25].v == 2 and "radar" or "alt")))) .. ext, env)()
+		    view = loadScript(FILE_PATH .. (HORUS and (TX16S and "tx16s" or (TX15 and "tx15" or (data.nv and "nirvana" or "horus"))) or (config[25].v == 0 and "view" or (config[25].v == 1 and "pilot" or (config[25].v == 2 and "radar" or "alt")))) .. ext, env)()
 		    data.v = config[25].v
 		end
 		view(data, config, modes, dir, units, labels, gpsDegMin, hdopGraph, icons, calcBearing, calcDir, VERSION, SMLCD, FILE_PATH, text, line, rect, fill, frmt)

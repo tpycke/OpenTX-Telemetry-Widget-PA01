@@ -16,6 +16,18 @@
 
 ![sample](https://raw.githubusercontent.com/iNavFlight/LuaTelemetry/master/assets/iNavConfigHorus.png "Horus config menu")
 
+### EdgeTX 3.0 and above
+_Entering the setup menu_
+To enter the configuration settings for a Lua script on newer version of EdgeTX:
+* Ensure the script is set to run in "app mode"
+* Long press the scroll wheel until the blue "EdgeTX" icon in the upper left disappears
+* Press the Sys button
+
+_Exiting the setup mode_
+* Press RTN to exit Lua configuration menu
+* Long press the TN button until the blue EdgeTX icon appears at top left
+* You can then use the Page buttons to swap between screens
+
 ### Other radios
 
 The following applies generically to all non-Colour (B&W) / small screen radios:
