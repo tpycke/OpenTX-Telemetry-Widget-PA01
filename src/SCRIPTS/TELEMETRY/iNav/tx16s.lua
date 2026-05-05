@@ -140,7 +140,12 @@ local function view(data, config, modes, dir, units, labels, gpsDegMin, hdopGrap
 
 	-- Draw ground
 	local gflag = data.set_flags(0, GROUND)
-	if skip then
+	local fixedHorizon = config[36] ~= nil and config[36].v == 1
+	if fixedHorizon then
+		-- Fixed horizon: flat ground below center
+		fill(tl.x, Y_CNTR, br.x - tl.x + 1, br.y - Y_CNTR + 1, gflag)
+		line(tl.x, Y_CNTR, br.x, Y_CNTR, SOLID, data.set_flags(0, LIGHTGREY))
+	elseif skip then
 		if (pitch - 90) * (upsideDown and -1 or 1) < 0 then
 		   fill(tl.x, tl.y, br.x - tl.x + 1, br.y - tl.y + 1, gflag)
 		end
@@ -235,10 +240,12 @@ local function view(data, config, modes, dir, units, labels, gpsDegMin, hdopGrap
 	-- Pitch ladder
 	if data.telem then
 	   tmp = pitch - 90
-		local tmp2 = max(min((tmp >= 0 and floor(tmp * 0.2) or math.ceil(tmp * 0.2)) * 5, 30), -30)
-		for x = tmp2 - 20, tmp2 + 20, 5 do
-			if x ~= 0 and (x % 10 == 0 or (x > -30 and x < 30)) then
-				pitchLadder(x % 10 == 0 and 20 or 15, x)
+		if not fixedHorizon then
+			local tmp2 = max(min((tmp >= 0 and floor(tmp * 0.2) or math.ceil(tmp * 0.2)) * 5, 30), -30)
+			for x = tmp2 - 20, tmp2 + 20, 5 do
+				if x ~= 0 and (x % 10 == 0 or (x > -30 and x < 30)) then
+					pitchLadder(x % 10 == 0 and 20 or 15, x)
+				end
 			end
 		end
 
@@ -316,64 +323,91 @@ local function view(data, config, modes, dir, units, labels, gpsDegMin, hdopGrap
 		end
 	end
 
-	-- Aircraft reference mark (procedural, replaces scaled fg bitmap to avoid
-	-- dark readout-box artifacts when bitmap is scaled for 800x480)
+	-- Aircraft reference mark
 	do
-		local fgv = config[30].v
 		local ycol = data.set_flags(0, OYELLOW)
-		if fgv <= 3 then
-			-- Wing lines (types 0-3 have horizontal wings with 2px thickness)
-			local wcol = fgv <= 1 and ycol or data.set_flags(0, BLACK)
-			line(X_CNTR - 90, Y_CNTR, X_CNTR - 15, Y_CNTR, SOLID, wcol)
-			line(X_CNTR - 90, Y_CNTR + 1, X_CNTR - 15, Y_CNTR + 1, SOLID, wcol)
-			line(X_CNTR + 15, Y_CNTR, X_CNTR + 90, Y_CNTR, SOLID, wcol)
-			line(X_CNTR + 15, Y_CNTR + 1, X_CNTR + 90, Y_CNTR + 1, SOLID, wcol)
-		end
-		if fgv == 0 then
-			-- Small black dot
-			fill(X_CNTR - 2, Y_CNTR - 2, 5, 5, data.set_flags(0, BLACK))
-		elseif fgv == 1 then
-			-- Yellow dot
-			fill(X_CNTR - 2, Y_CNTR - 2, 5, 5, ycol)
-		elseif fgv == 2 then
-			-- Larger chevron/arrowhead (yellow fill, black outline)
-			for dy = 0, 13 do
-				local hw = floor(dy * 1.15 + 0.5)
-				if hw > 0 then
-					fill(X_CNTR - hw, Y_CNTR - 8 + dy, hw * 2 + 1, 1, ycol)
-				end
-			end
+		if fixedHorizon then
+			-- Fixed horizon mode: aircraft symbol moves with pitch/roll
+			local py = Y_CNTR - (pitch - 90) * DEGV / 90
+			py = max(TOP + 15, min(BOTTOM - 15, py))
+			local r = rad(roll - 90)
+			local s, c = sin(r), cos(r)
+			local wing = 70
+			local gap = 15
 			local oc = data.set_flags(0, BLACK)
-			line(X_CNTR, Y_CNTR - 8, X_CNTR - 15, Y_CNTR + 5, SOLID, oc)
-			line(X_CNTR, Y_CNTR - 8, X_CNTR + 15, Y_CNTR + 5, SOLID, oc)
-		elseif fgv == 3 then
-			-- Smaller chevron
-			for dy = 0, 9 do
-				local hw = floor(dy * 1.1 + 0.5)
-				if hw > 0 then
-					fill(X_CNTR - hw, Y_CNTR - 5 + dy, hw * 2 + 1, 1, ycol)
-				end
+			-- Wing bars: perpendicular-offset lines for thickness (7px: 5 yellow + 2 black outline)
+			for d = -3, 3 do
+				local col = (d > -3 and d < 3) and ycol or oc
+				local ox, oy = -s * d, c * d
+				line(X_CNTR - c * wing + ox, py + s * wing + oy, X_CNTR - c * gap + ox, py + s * gap + oy, SOLID, col)
+				line(X_CNTR + c * gap + ox, py - s * gap + oy, X_CNTR + c * wing + ox, py - s * wing + oy, SOLID, col)
 			end
-			local oc = data.set_flags(0, BLACK)
-			line(X_CNTR, Y_CNTR - 5, X_CNTR - 10, Y_CNTR + 4, SOLID, oc)
-			line(X_CNTR, Y_CNTR - 5, X_CNTR + 10, Y_CNTR + 4, SOLID, oc)
-		elseif fgv == 4 then
-			-- Crosshair with center rectangle
-			line(X_CNTR - 15, Y_CNTR, X_CNTR - 6, Y_CNTR, SOLID, ycol)
-			line(X_CNTR + 6, Y_CNTR, X_CNTR + 15, Y_CNTR, SOLID, ycol)
-			line(X_CNTR, Y_CNTR - 15, X_CNTR, Y_CNTR - 6, SOLID, ycol)
-			line(X_CNTR, Y_CNTR + 6, X_CNTR, Y_CNTR + 15, SOLID, ycol)
-			rect(X_CNTR - 5, Y_CNTR - 5, 11, 11, ycol)
-		elseif fgv == 5 then
-			-- W-wing / zigzag (2px thick)
-			line(X_CNTR - 50, Y_CNTR - 8, X_CNTR - 20, Y_CNTR + 6, SOLID, ycol)
-			line(X_CNTR - 20, Y_CNTR + 6, X_CNTR, Y_CNTR - 2, SOLID, ycol)
-			line(X_CNTR, Y_CNTR - 2, X_CNTR + 20, Y_CNTR + 6, SOLID, ycol)
-			line(X_CNTR + 20, Y_CNTR + 6, X_CNTR + 50, Y_CNTR - 8, SOLID, ycol)
-			line(X_CNTR - 50, Y_CNTR - 7, X_CNTR - 20, Y_CNTR + 7, SOLID, ycol)
-			line(X_CNTR - 20, Y_CNTR + 7, X_CNTR, Y_CNTR - 1, SOLID, ycol)
-			line(X_CNTR, Y_CNTR - 1, X_CNTR + 20, Y_CNTR + 7, SOLID, ycol)
-			line(X_CNTR + 20, Y_CNTR + 7, X_CNTR + 50, Y_CNTR - 7, SOLID, ycol)
+			-- Tail (points up from center when level)
+			local tail = 25
+			for d = -2, 2 do
+				local col = (d > -2 and d < 2) and ycol or oc
+				line(X_CNTR, py + d, X_CNTR - s * tail, py - c * tail + d, SOLID, col)
+			end
+			-- Center dot
+			fill(X_CNTR - 4, py - 4, 9, 9, oc)
+			fill(X_CNTR - 3, py - 3, 7, 7, ycol)
+		else
+			-- Standard mode: fixed aircraft symbol at center
+			local fgv = config[30].v
+			if fgv <= 3 then
+				-- Wing lines (types 0-3 have horizontal wings with 2px thickness)
+				local wcol = fgv <= 1 and ycol or data.set_flags(0, BLACK)
+				line(X_CNTR - 90, Y_CNTR, X_CNTR - 15, Y_CNTR, SOLID, wcol)
+				line(X_CNTR - 90, Y_CNTR + 1, X_CNTR - 15, Y_CNTR + 1, SOLID, wcol)
+				line(X_CNTR + 15, Y_CNTR, X_CNTR + 90, Y_CNTR, SOLID, wcol)
+				line(X_CNTR + 15, Y_CNTR + 1, X_CNTR + 90, Y_CNTR + 1, SOLID, wcol)
+			end
+			if fgv == 0 then
+				-- Small black dot
+				fill(X_CNTR - 2, Y_CNTR - 2, 5, 5, data.set_flags(0, BLACK))
+			elseif fgv == 1 then
+				-- Yellow dot
+				fill(X_CNTR - 2, Y_CNTR - 2, 5, 5, ycol)
+			elseif fgv == 2 then
+				-- Larger chevron/arrowhead (yellow fill, black outline)
+				for dy = 0, 13 do
+					local hw = floor(dy * 1.15 + 0.5)
+					if hw > 0 then
+						fill(X_CNTR - hw, Y_CNTR - 8 + dy, hw * 2 + 1, 1, ycol)
+					end
+				end
+				local oc = data.set_flags(0, BLACK)
+				line(X_CNTR, Y_CNTR - 8, X_CNTR - 15, Y_CNTR + 5, SOLID, oc)
+				line(X_CNTR, Y_CNTR - 8, X_CNTR + 15, Y_CNTR + 5, SOLID, oc)
+			elseif fgv == 3 then
+				-- Smaller chevron
+				for dy = 0, 9 do
+					local hw = floor(dy * 1.1 + 0.5)
+					if hw > 0 then
+						fill(X_CNTR - hw, Y_CNTR - 5 + dy, hw * 2 + 1, 1, ycol)
+					end
+				end
+				local oc = data.set_flags(0, BLACK)
+				line(X_CNTR, Y_CNTR - 5, X_CNTR - 10, Y_CNTR + 4, SOLID, oc)
+				line(X_CNTR, Y_CNTR - 5, X_CNTR + 10, Y_CNTR + 4, SOLID, oc)
+			elseif fgv == 4 then
+				-- Crosshair with center rectangle
+				line(X_CNTR - 15, Y_CNTR, X_CNTR - 6, Y_CNTR, SOLID, ycol)
+				line(X_CNTR + 6, Y_CNTR, X_CNTR + 15, Y_CNTR, SOLID, ycol)
+				line(X_CNTR, Y_CNTR - 15, X_CNTR, Y_CNTR - 6, SOLID, ycol)
+				line(X_CNTR, Y_CNTR + 6, X_CNTR, Y_CNTR + 15, SOLID, ycol)
+				rect(X_CNTR - 5, Y_CNTR - 5, 11, 11, ycol)
+			elseif fgv == 5 then
+				-- W-wing / zigzag (2px thick)
+				line(X_CNTR - 50, Y_CNTR - 8, X_CNTR - 20, Y_CNTR + 6, SOLID, ycol)
+				line(X_CNTR - 20, Y_CNTR + 6, X_CNTR, Y_CNTR - 2, SOLID, ycol)
+				line(X_CNTR, Y_CNTR - 2, X_CNTR + 20, Y_CNTR + 6, SOLID, ycol)
+				line(X_CNTR + 20, Y_CNTR + 6, X_CNTR + 50, Y_CNTR - 8, SOLID, ycol)
+				line(X_CNTR - 50, Y_CNTR - 7, X_CNTR - 20, Y_CNTR + 7, SOLID, ycol)
+				line(X_CNTR - 20, Y_CNTR + 7, X_CNTR, Y_CNTR - 1, SOLID, ycol)
+				line(X_CNTR, Y_CNTR - 1, X_CNTR + 20, Y_CNTR + 7, SOLID, ycol)
+				line(X_CNTR + 20, Y_CNTR + 7, X_CNTR + 50, Y_CNTR - 7, SOLID, ycol)
+			end
 		end
 	end
 

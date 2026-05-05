@@ -37,6 +37,7 @@ local config = {
 	{ o = 26, c = 1, v = 0 }, -- Roll Scale - 33
 	{ o = 34, c = 1, v = 0, l = {[0] = "?"}, x = -1 }, -- Review Log Date - 34
 	{ o = 35, c = 1, v = 0 }, -- Greyscale toggle - 35
+	{ o = 36, c = 1, v = 0 }, -- Horizon Mode - 36
 }
 
 for i = 1, #config do

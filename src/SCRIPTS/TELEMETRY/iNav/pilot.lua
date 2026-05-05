@@ -98,17 +98,20 @@ local function view(data, config, modes, dir, units, labels, gpsDegMin, hdopGrap
 		upsideDown = data.accz < 0
 	end
 	roll1 = math.rad(roll)
+	local fixedHorizon = config[36] ~= nil and config[36].v == 1
 	if data.startup == 0 and data.telem then
 		tmp = pitch - 90
-		local short = SMLCD and 4 or 6
-		local tmp2 = math.max(math.min((tmp >= 0 and math.floor(tmp * 0.2) or math.ceil(tmp * 0.2)) * 5, 35), -35)
-		for x = tmp2 - 15, tmp2 + 15, 5 do
-			if x ~= 0 and (x % 10 == 0 or (x > -30 and x < 30)) then
-				pitchLadder(x % 10 == 0 and 11 or short, x)
+		if not fixedHorizon then
+			local short = SMLCD and 4 or 6
+			local tmp2 = math.max(math.min((tmp >= 0 and math.floor(tmp * 0.2) or math.ceil(tmp * 0.2)) * 5, 35), -35)
+			for x = tmp2 - 15, tmp2 + 15, 5 do
+				if x ~= 0 and (x % 10 == 0 or (x > -30 and x < 30)) then
+					pitchLadder(x % 10 == 0 and 11 or short, x)
+				end
 			end
 		end
 		if not data.showMax then
-			tmp2 = tmp >= 0 and (tmp < 1 and 0 or math.floor(tmp + 0.5)) or (tmp > -1 and 0 or math.ceil(tmp - 0.5))
+			local tmp2 = tmp >= 0 and (tmp < 1 and 0 or math.floor(tmp + 0.5)) or (tmp > -1 and 0 or math.ceil(tmp - 0.5))
 			text(X_CNTR - (SMLCD and 14 or 24), 33, math.abs(tmp2) .. (SMLCD and "" or "\64"), SMLSIZE + RIGHT)
 		end
 	end
@@ -187,74 +190,114 @@ local function view(data, config, modes, dir, units, labels, gpsDegMin, hdopGrap
 	end
 
 	-- Attitude part 2 (artificial horizon)
-	fill(X_CNTR - 1, 34, 3, 3, ERASE)
-	local x = math.sin(roll1) * 200
-	local y = math.cos(roll1) * 200
-	local p = math.cos(math.rad(pitch)) * 85
-	local x1, y1, x2, y2 = X_CNTR - x - 2.5, 35 + y - p, X_CNTR + x - 2.5, 35 - y - p
-	local a = (y2 - y1) / (x2 - x1 + .001)
-	local y = y1 - ((x1 - LEFT_POS + 1) * a)
-	--[[ Old slower method
-	for x = LEFT_POS + 1, RIGHT_POS - 1 do
-		local yy = y + 0.5
-		if (not upsideDown and yy < 64) or (upsideDown and yy > 7) then
-			line(x, math.min(math.max(yy, 8), 63), x, upsideDown and 8 or 63, SOLID, (SMLCD or config[35].v == 1) and 0 or GREY_DEFAULT)
+	if fixedHorizon then
+		-- Fixed horizon: flat ground below center
+		local gcolor = (SMLCD or config[35].v == 1) and 0 or GREY_DEFAULT
+		fill(LEFT_POS + 1, 36, RIGHT_POS - LEFT_POS - 2, 28, gcolor)
+		line(LEFT_POS + 1, 35, RIGHT_POS - 1, 35, SOLID, SMLCD and 0 or FORCE)
+		-- Moving aircraft symbol
+		local py = 35 - (pitch - 90) * 85 / 90
+		py = math.max(17, math.min(54, py))
+		local r = math.rad(roll - 90)
+		local s, c = math.sin(r), math.cos(r)
+		local w = SMLCD and 10 or 18
+		local lf = SMLCD and 0 or FORCE
+		-- Erase area around aircraft symbol
+		local et = math.max(8, py - w - 2)
+		fill(X_CNTR - w - 2, et, w * 2 + 5, math.min(64, py + w + 2) - et + 1, ERASE)
+		-- Redraw ground behind symbol if needed
+		if py + w + 2 > 35 then
+			local gt = math.max(36, py - w - 2)
+			fill(X_CNTR - w - 2, gt, w * 2 + 5, math.min(64, py + w + 2) - gt, gcolor)
 		end
-		y = y + a
-	end
-	]]
-	-- Faster method
-	local width = math.min(math.max(4 - math.ceil(math.abs(roll - 90) * 0.05), 1), 3)
-	for x = LEFT_POS + 1, RIGHT_POS - 1, width do
-		local yy = y + 0.5
-		if (not upsideDown and yy < 64) or (upsideDown and yy > 7) then
-			local t = upsideDown and 8 or math.min(math.max(yy, 8), 63)
-			local h = upsideDown and math.min(math.max(yy, 8), 64) - t or 65 - t
-			fill(x, t, width, h, (SMLCD or config[35].v == 1) and 0 or GREY_DEFAULT)
+		-- Rotated wing lines (perpendicular thickness)
+		local gap = SMLCD and 3 or 5
+		for d = -1, 1 do
+			local ox, oy = -s * d, c * d
+			line(X_CNTR - c * w + ox, py + s * w + oy, X_CNTR - c * gap + ox, py + s * gap + oy, SOLID, lf)
+			line(X_CNTR + c * gap + ox, py - s * gap + oy, X_CNTR + c * w + ox, py - s * w + oy, SOLID, lf)
 		end
-		y = y + a * width
-	end
-	--[[ Even faster?
-	local width = math.min(math.max(4 - math.ceil(math.abs(roll - 90) * 0.05), 1), 3)
-	local lastx = -1
-	for x = LEFT_POS + 1, RIGHT_POS - 1, width do
-		if upsideDown then
-			if y > 8 then
-				local h = math.min(math.max(y + 0.5, 8), 64) - 8
-				if roll > 90 and h == 56 then
-					lastx = x
-					break
-				end
-				fill(x, 8, width, h, (SMLCD or config[35].v == 1) and 0 or GREY_DEFAULT)
-			end
+		-- Tail line
+		local tail = SMLCD and 6 or 10
+		line(X_CNTR, py, X_CNTR - s * tail, py - c * tail, SOLID, lf)
+		-- Center dot
+		line(X_CNTR - 1, py, X_CNTR + 1, py, SOLID, lf)
+		if SMLCD then
+			lcd.drawPoint(X_CNTR, py - 1, 0)
+			lcd.drawPoint(X_CNTR, py + 1, 0)
 		else
-			if y < 64 then
-				local t = math.min(math.max(y + 0.5, 8), 63)
-				if roll < 90 and t == 8 then
-					lastx = x
-					break
-				end
-				fill(x, t, width, 65 - t, (SMLCD or config[35].v == 1) and 0 or GREY_DEFAULT)
-			end
+			line(X_CNTR, py - 1, X_CNTR, py + 1, SOLID, FORCE)
 		end
-		y = y + a * width
-	end
-	if lastx then
-		fill(lastx, 8, RIGHT_POS - lastx, 57, (SMLCD or config[35].v == 1) and 0 or GREY_DEFAULT)
-	end
-	]]
-	local inside = SMLCD and 6 or 13
-	local outside = SMLCD and 14 or 24
-	line(X_CNTR - outside, 35, X_CNTR - inside, 35, SOLID, SMLCD and 0 or FORCE)
-	line(X_CNTR + outside, 35, X_CNTR + inside, 35, SOLID, SMLCD and 0 or FORCE)
-	line(X_CNTR - inside, 36, X_CNTR - inside, SMLCD and 37 or 38, SOLID, SMLCD and 0 or FORCE)
-	line(X_CNTR + inside, 36, X_CNTR + inside, SMLCD and 37 or 38, SOLID, SMLCD and 0 or FORCE)
-	line(X_CNTR - 1, 35, X_CNTR + 1, 35, SOLID, SMLCD and 0 or FORCE)
-	if SMLCD then
-		lcd.drawPoint(X_CNTR, 34, 0)
-		lcd.drawPoint(X_CNTR, 36, 0)
 	else
-		line(X_CNTR, 34, X_CNTR, 36, SOLID, FORCE)
+		fill(X_CNTR - 1, 34, 3, 3, ERASE)
+		local x = math.sin(roll1) * 200
+		local y = math.cos(roll1) * 200
+		local p = math.cos(math.rad(pitch)) * 85
+		local x1, y1, x2, y2 = X_CNTR - x - 2.5, 35 + y - p, X_CNTR + x - 2.5, 35 - y - p
+		local a = (y2 - y1) / (x2 - x1 + .001)
+		local y = y1 - ((x1 - LEFT_POS + 1) * a)
+		--[[ Old slower method
+		for x = LEFT_POS + 1, RIGHT_POS - 1 do
+			local yy = y + 0.5
+			if (not upsideDown and yy < 64) or (upsideDown and yy > 7) then
+				line(x, math.min(math.max(yy, 8), 63), x, upsideDown and 8 or 63, SOLID, (SMLCD or config[35].v == 1) and 0 or GREY_DEFAULT)
+			end
+			y = y + a
+		end
+		]]
+		-- Faster method
+		local width = math.min(math.max(4 - math.ceil(math.abs(roll - 90) * 0.05), 1), 3)
+		for x = LEFT_POS + 1, RIGHT_POS - 1, width do
+			local yy = y + 0.5
+			if (not upsideDown and yy < 64) or (upsideDown and yy > 7) then
+				local t = upsideDown and 8 or math.min(math.max(yy, 8), 63)
+				local h = upsideDown and math.min(math.max(yy, 8), 64) - t or 65 - t
+				fill(x, t, width, h, (SMLCD or config[35].v == 1) and 0 or GREY_DEFAULT)
+			end
+			y = y + a * width
+		end
+		--[[ Even faster?
+		local width = math.min(math.max(4 - math.ceil(math.abs(roll - 90) * 0.05), 1), 3)
+		local lastx = -1
+		for x = LEFT_POS + 1, RIGHT_POS - 1, width do
+			if upsideDown then
+				if y > 8 then
+					local h = math.min(math.max(y + 0.5, 8), 64) - 8
+					if roll > 90 and h == 56 then
+						lastx = x
+						break
+					end
+					fill(x, 8, width, h, (SMLCD or config[35].v == 1) and 0 or GREY_DEFAULT)
+				end
+			else
+				if y < 64 then
+					local t = math.min(math.max(y + 0.5, 8), 63)
+					if roll < 90 and t == 8 then
+						lastx = x
+						break
+					end
+					fill(x, t, width, 65 - t, (SMLCD or config[35].v == 1) and 0 or GREY_DEFAULT)
+				end
+			end
+			y = y + a * width
+		end
+		if lastx then
+			fill(lastx, 8, RIGHT_POS - lastx, 57, (SMLCD or config[35].v == 1) and 0 or GREY_DEFAULT)
+		end
+		]]
+		local inside = SMLCD and 6 or 13
+		local outside = SMLCD and 14 or 24
+		line(X_CNTR - outside, 35, X_CNTR - inside, 35, SOLID, SMLCD and 0 or FORCE)
+		line(X_CNTR + outside, 35, X_CNTR + inside, 35, SOLID, SMLCD and 0 or FORCE)
+		line(X_CNTR - inside, 36, X_CNTR - inside, SMLCD and 37 or 38, SOLID, SMLCD and 0 or FORCE)
+		line(X_CNTR + inside, 36, X_CNTR + inside, SMLCD and 37 or 38, SOLID, SMLCD and 0 or FORCE)
+		line(X_CNTR - 1, 35, X_CNTR + 1, 35, SOLID, SMLCD and 0 or FORCE)
+		if SMLCD then
+			lcd.drawPoint(X_CNTR, 34, 0)
+			lcd.drawPoint(X_CNTR, 36, 0)
+		else
+			line(X_CNTR, 34, X_CNTR, 36, SOLID, FORCE)
+		end
 	end
 
 	-- Heading part 2
