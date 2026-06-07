@@ -41,7 +41,7 @@ local function title()
 	text(0, 0, model.getInfo().name, data.set_flags(0, data.TextColor))
 
 	-- TX battery
-	local bat = data.nv and 135 or 197
+	local bat = (data.nv or data.c320) and 135 or 197
 	if config[19].v > 0 then
 	   flags = data.set_flags(0, data.TextColor)
 	   fill(bat, 3, 43, 14, flags)
@@ -52,15 +52,15 @@ local function title()
 	   end
 	end
 	if config[19].v ~= 1 then
-	   text(data.nv and 180 or bat + 93, 0, frmt("%.1fV", data.txBatt), data.set_flags(RIGHT, data.TextColor))
+	   text((data.nv or data.c320) and 180 or bat + 93, 0, frmt("%.1fV", data.txBatt), data.set_flags(RIGHT, data.TextColor))
 	end
 
 	-- Timer
 	if config[13].v > 0 then
 		if data.doLogs and data.time ~= nil then
-		   text(data.nv and 184 or 340, 0, data.time, data.set_flags(0, data.TextColor))
+		   text((data.nv or data.c320) and 184 or 340, 0, data.time, data.set_flags(0, data.TextColor))
 		else
-		   lcd.drawTimer(data.nv and 202 or 340, 0, data.timer, data.set_flags(0,data.TextColor))
+		   lcd.drawTimer((data.nv or data.c320) and 202 or 340, 0, data.timer, data.set_flags(0,data.TextColor))
 		end
 	end
 
@@ -103,7 +103,7 @@ end
 local function gpsDegMin(c, lat)
 	local gpsD = math.floor(math.abs(c))
 	local gpsM = math.floor((math.abs(c) - gpsD) * 60)
-	return frmt(data.nv and "%d"..DEGSYM.."%d'%04.1f\"" or "%d"..DEGSYM.."%d'%05.2f\"", gpsD, gpsM, ((math.abs(c) - gpsD) * 60 - gpsM) * 60) .. (lat and (c >= 0 and dir[0] or dir[4]) or (c >= 0 and dir[2] or dir[6]))
+	return frmt((data.nv or data.c320) and "%d"..DEGSYM.."%d'%04.1f\"" or "%d"..DEGSYM.."%d'%05.2f\"", gpsD, gpsM, ((math.abs(c) - gpsD) * 60 - gpsM) * 60) .. (lat and (c >= 0 and dir[0] or dir[4]) or (c >= 0 and dir[2] or dir[6]))
 end
 
 local function hdopGraph(x, y)
@@ -124,7 +124,7 @@ icons.home = {
 	[2] = Bitmap.open(FILE_PATH .. "pics/homel.png"),
 }
 icons.fpv = Bitmap.open(FILE_PATH .. "pics/fpv.png")
-icons.bg = Bitmap.open(FILE_PATH .. (data.nv and "pics/bgnv.png" or "pics/bg.png"))
+icons.bg = Bitmap.open(FILE_PATH .. ((data.nv or data.c320) and "pics/bgnv.png" or "pics/bg.png"))
 icons.roll = Bitmap.open(FILE_PATH .. "pics/roll.png")
 icons.fg = Bitmap.open(FILE_PATH .. "pics/fg" .. config[30].v .. ".png")
 
@@ -148,7 +148,7 @@ modes[4].t = "ACRO"
 -- Make sure widget is full screen
 if type(iNavZone) == "table" and type(iNavZone.zone) ~= "nil" then
 	data.widget = true
-	if iNavZone.zone.w < (data.nv and 280 or 450) or iNavZone.zone.h < (data.nv and 450 or 250) then
+	if iNavZone.zone.w < (data.c320 and 310 or (data.nv and 280 or 450)) or iNavZone.zone.h < (data.c320 and 230 or (data.nv and 450 or 250)) then
 		data.startupTime = math.huge
 		function data.nfs()
 		   text(iNavZone.zone.x + 14, iNavZone.zone.y + 16, "Full screen required", data.set_flags(SMLSIZE, data.WarningColor))
@@ -157,7 +157,7 @@ if type(iNavZone) == "table" and type(iNavZone.zone) ~= "nil" then
 end
 
 -- Nirvana's drawRectangle function is broken, replace it
-if data.nv then
+if data.nv or data.c320 then
 	function rect(x, y, w, h, color)
 		w = w - 1
 		h = h - 1
@@ -169,9 +169,9 @@ if data.nv then
 end
 
 function data.clear(event)
-   local bcol = data.nv and (data.configStatus > 0 and data.RGB(98, 106, 115) or data.RGB(50, 82, 115)) or data.RGB(0, 32, 65)
+   local bcol = (data.nv or data.c320) and (data.configStatus > 0 and data.RGB(98, 106, 115) or data.RGB(50, 82, 115)) or data.RGB(0, 32, 65)
    lcd.clear(data.set_flags(0, bcol))
-   data.WarningColor = data.telem and (data.nv and data.RGB(255, 255, 100) or OYELLOW) or (data.nv and data.RGB(255, 100, 100) or RED) --lcd.RGB(255, 255, 100) / lcd.RGB(255, 100, 100)
+   data.WarningColor = data.telem and ((data.nv or data.c320) and data.RGB(255, 255, 100) or OYELLOW) or ((data.nv or data.c320) and data.RGB(255, 100, 100) or RED) --lcd.RGB(255, 255, 100) / lcd.RGB(255, 100, 100)
 
 	if event == 0 or event == nil then
 		event = 0
@@ -185,9 +185,9 @@ function data.clear(event)
 				elseif getValue(data.hcurx_id) > 940 then
 					event = EVT_ENTER_BREAK -- Right (enter)
 				elseif getValue(data.hcury_id) > 200 then
-					event = data.nv and EVT_VIRTUAL_PREV or EVT_ROT_LEFT -- Up
+					event = (data.nv or data.c320) and EVT_VIRTUAL_PREV or EVT_ROT_LEFT -- Up
 				elseif getValue(data.hcury_id) < -200 then
-				   event = data.nv and EVT_VIRTUAL_NEXT or EVT_ROT_RIGHT -- Down
+				   event = (data.nv or data.c320) and EVT_VIRTUAL_NEXT or EVT_ROT_RIGHT -- Down
 				end
 			end
 			if data.lastevt == event and (data.configStatus == 0 or math.abs(getValue(data.hcury_id)) < 940) then
@@ -199,12 +199,12 @@ function data.clear(event)
 		if data.t6_id ~= nil then
 		   if event == 0 and data.lastt6 ~= nil then
 		      if getValue(data.t6_id) > data.lastt6 then
-			 event = data.nv and EVT_VIRTUAL_PREV or EVT_ROT_LEFT -- Up
+			 event = (data.nv or data.c320) and EVT_VIRTUAL_PREV or EVT_ROT_LEFT -- Up
 		      elseif getValue(data.t6_id) < data.lastt6 then
-			 event = data.nv and EVT_VIRTUAL_NEXT or EVT_ROT_RIGHT -- Down
+			 event = (data.nv or data.c320) and EVT_VIRTUAL_NEXT or EVT_ROT_RIGHT -- Down
 		      end
 		   end
-		   data.lastt6 = not data.nv and getValue(data.t6_id) or nil
+		   data.lastt6 = not (data.nv or data.c320) and getValue(data.t6_id) or nil
 		   if data.lastt6 == 0 then
 		      data.lastt6 = nil
 		   end
@@ -223,16 +223,16 @@ function data.menu(prev)
 
 	-- Aircraft symbol preview
 	if data.configStatus == 27 and data.configSelect ~= 0 then
-	   local scol = data.nv and data.RGB(49, 170, 230) or data.RGB(0, 121, 180)
-	   fill(LCD_W - 124, (data.nv and 28 or 111), 123, 31, data.set_flags(0, scol))
-	   local gcol = data.nv and data.RGB(148, 117, 57) or data.RGB(98, 68, 8)
-	   fill(LCD_W - 124, (data.nv and 59 or 142), 123, 31, data.set_flags(0, gcol))
-	   lcd.drawBitmap(icons.fg, LCD_W - 125, (data.nv and 27 or 110), 50)
-	   rect(LCD_W - 125, (data.nv and 27 or 110), 125, 64, data.set_flags(0,data.TextColor))
+	   local scol = (data.nv or data.c320) and data.RGB(49, 170, 230) or data.RGB(0, 121, 180)
+	   fill(LCD_W - 124, ((data.nv or data.c320) and (data.c320 and 50 or 28) or 111), 123, 31, data.set_flags(0, scol))
+	   local gcol = (data.nv or data.c320) and data.RGB(148, 117, 57) or data.RGB(98, 68, 8)
+	   fill(LCD_W - 124, ((data.nv or data.c320) and (data.c320 and 81 or 59) or 142), 123, 31, data.set_flags(0, gcol))
+	   lcd.drawBitmap(icons.fg, LCD_W - 125, ((data.nv or data.c320) and (data.c320 and 49 or 27) or 110), 50)
+	   rect(LCD_W - 125, ((data.nv or data.c320) and (data.c320 and 49 or 27) or 110), 125, 64, data.set_flags(0,data.TextColor))
 	end
 	-- Return throttle stick to bottom center
 	if data.stickMsg ~= nil and not data.armed then
-	   local tflags = data.set_flags(data.nv and SMLSIZE or MIDSIZE, OYELLOW)
+	   local tflags = data.set_flags((data.nv or data.c320) and SMLSIZE or MIDSIZE, OYELLOW)
 	   local ox,oy, oh, ow, ty
 	   if data.etx then -- takes flags into account for sizing
 	      fw,fh = lcd.sizeText(data.stickMsg, tflags)
@@ -242,11 +242,11 @@ function data.menu(prev)
 	      oy = (LCD_H - fh) / 2 - 2
 	      ty = oy + 1
 	   else
-	      if data.nv then
+	      if data.nv or data.c320 then
 		 ox = 6
-		 oy = 270
+		 oy = data.c320 and 100 or 270
 		 ow = 308
-		 ty = 275
+		 ty = data.c320 and 105 or 275
 	      else
 		 ox = 20
 		 oy = 128

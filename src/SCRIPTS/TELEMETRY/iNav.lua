@@ -5,9 +5,10 @@ local zone, options = ...
 local VERSION = "2.3.0"
 local FILE_PATH = "/SCRIPTS/TELEMETRY/iNav/"
 local SMLCD = LCD_W < 212
-local HORUS = LCD_W >= 480 or LCD_H >= 480
+local HORUS = LCD_W >= 480 or LCD_H >= 480 or (LCD_W == 320 and LCD_H == 240)
 local TX15 = LCD_W == 480 and LCD_H == 320
 local TX16S = LCD_W >= 800 and LCD_H >= 480
+local C320 = LCD_W == 320 and LCD_H == 240
 local tmp, view, lang, playLog
 local env = "bt" -- compile on platform
 local inav = {}
@@ -34,6 +35,7 @@ local data, getTelemetryId, getTelemetryUnit, MENU, text, line, rect, fill, frmt
 collectgarbage()
 
 data.etx = osname ~= nil and osname == "EdgeTX"
+data.c320 = C320
 
 loadScript(FILE_PATH .. "load" .. ext, env)(config, data, FILE_PATH)
 collectgarbage()
@@ -589,7 +591,7 @@ function inav.run(event, touchState)
 		if data.v ~= config[25].v then
 		    view = nil
 		    collectgarbage()
-		    view = loadScript(FILE_PATH .. (HORUS and (TX16S and "tx16s" or (TX15 and "tx15" or (data.nv and "nirvana" or "horus"))) or (config[25].v == 0 and "view" or (config[25].v == 1 and "pilot" or (config[25].v == 2 and "radar" or "alt")))) .. ext, env)()
+		    view = loadScript(FILE_PATH .. (HORUS and (TX16S and "tx16s" or (TX15 and "tx15" or (C320 and "c320x240" or (data.nv and "nirvana" or "horus")))) or (config[25].v == 0 and "view" or (config[25].v == 1 and "pilot" or (config[25].v == 2 and "radar" or "alt")))) .. ext, env)()
 		    data.v = config[25].v
 		end
 		view(data, config, modes, dir, units, labels, gpsDegMin, hdopGraph, icons, calcBearing, calcDir, VERSION, SMLCD, FILE_PATH, text, line, rect, fill, frmt)
