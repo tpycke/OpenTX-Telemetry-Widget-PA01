@@ -612,8 +612,8 @@ local function view(data, config, modes, dir, units, labels, gpsDegMin, hdopGrap
 		if data.tpwr then
 		   text(RIGHT_POS, TOP + 1, data.tpwr .. "mW", data.set_flags(MIDSIZE+RIGHT, telemCol))
 		end
-		text(RIGHT_POS, TOP + 28, data.satellites % 100, data.set_flags(MIDSIZE+RIGHT, telemCol))
-		hdopGraph(X3 + 35, TOP + 45)
+		text(RIGHT_POS, TOP + 29, data.satellites % 100, data.set_flags(MIDSIZE+RIGHT, telemCol))
+		hdopGraph(X3 + 35, TOP + 46)
 	else
 		tmp = ((data.armed or data.modeId == 6) and data.hdop < 11 - config[21].v * 2) or not data.telem
 		text(X3 + 48, TOP + 1, (data.hdop == 0 and not data.gpsFix) and "-- --" or (9 - data.hdop) * 0.5 + 0.8, data.set_flags(MIDSIZE + RIGHT, (tmp and RED or data.TextColor)))
@@ -634,12 +634,12 @@ local function view(data, config, modes, dir, units, labels, gpsDegMin, hdopGrap
 	-- Dividers
 	local dkgcol = data.set_flags(0, DKGREY)
 	line(X1 + 2, TOP, X1 + 2, BOTTOM, SOLID, dkgcol)
-	line(X2 + 1, TOP, X2 + 1, BOTTOM, SOLID, dkgcol)
+	line(X2 + 0, TOP, X2 + 0, BOTTOM, SOLID, dkgcol)
 	line(X3 + 2, TOP, X3 + 2, BOTTOM, SOLID, dkgcol)
 	line(0, TOP - 1, LCD_W - 1, TOP - 1, SOLID, data.set_flags(0, LIGHTGREY))
 
 	line(X3 + 2, TOP + 82, RIGHT_POS, TOP + 82, SOLID, dkgcol)
-	line(X3 + 2, TOP + 23, RIGHT_POS, TOP + 23, SOLID, dkgcol)
+	line(X3 + 2, TOP + 24, RIGHT_POS, TOP + 24, SOLID, dkgcol)
 
 	if data.showMax then
 		fill(150, TOP - 20, 80, 20, data.set_flags(0, OYELLOW))
