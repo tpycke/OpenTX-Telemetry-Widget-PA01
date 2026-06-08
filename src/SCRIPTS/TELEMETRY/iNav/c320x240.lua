@@ -514,42 +514,42 @@ local function view(data, config, modes, dir, units, labels, gpsDegMin, hdopGrap
 	tmp = (not data.telem or data.cell < config[3].v or (data.showFuel and config[23].v == 0 and data.fuel <= config[17].v)) and RED or data.TextColor
 	if data.showFuel then
 		if config[23].v > 0 or (data.crsf and data.showMax) then
-		   text(X1 - 3, TOP + 1, (data.crsf and data.fuelRaw or data.fuel) .. data.fUnit[data.crsf and 1 or config[23].v], data.set_flags(SMLSIZE + RIGHT, tmp))
+		   text(X1 - 3, TOP + 1, (data.crsf and data.fuelRaw or data.fuel) .. data.fUnit[data.crsf and 1 or config[23].v], data.set_flags(RIGHT, tmp))
 		else
-		   text(X1 - 3, TOP + 1, data.fuel .. "%", data.set_flags(SMLSIZE + RIGHT, tmp))
+		   text(X1 - 3, TOP + 1, data.fuel .. "%", data.set_flags(RIGHT, tmp))
 			if data.fl ~= data.fuel then
 				local red = data.fuel >= config[18].v and max(floor((100 - data.fuel) / (100 - config[18].v) * 255), 0) or 255
 				local green = data.fuel < config[18].v and max(floor((data.fuel - config[17].v) / (config[18].v - config[17].v) * 255), 0) or 255
 				data.fc = rgb(red, green, 60)
 				data.fl = data.fuel
 			end
-			lcd.drawGauge(0, TOP + 14, X1 - 3, 8, min(data.fuel, 99), 100, data.set_flags(0, data.fc))
+			lcd.drawGauge(0, TOP + 16, X1 - 3, 8, min(data.fuel, 99), 100, data.set_flags(0, data.fc))
 		end
 		text(0, TOP + 1, labels[1], data.set_flags(SMLSIZE, data.TextColor))
 	end
 
 	local val = math.floor((data.showMax and data.cellMin or data.cell) * 100 + 0.5) * 0.01
-	text(X1 - 3, TOP + 26, frmt(config[1].v == 0 and "%.2fV" or "%.1fV", config[1].v == 0 and val or (data.showMax and data.battMin or data.batt)), data.set_flags(SMLSIZE + RIGHT, tmp))
-	text(0, TOP + 26, labels[2], data.set_flags(SMLSIZE, data.TextColor))
+	text(X1 - 3, TOP + 30, frmt(config[1].v == 0 and "%.2fV" or "%.1fV", config[1].v == 0 and val or (data.showMax and data.battMin or data.batt)), data.set_flags(RIGHT, tmp))
+	text(0, TOP + 30, labels[2], data.set_flags(SMLSIZE, data.TextColor))
 	if data.bl ~= val then
 		local red = val >= config[2].v and max(floor((4.2 - val) / (4.2 - config[2].v) * 255), 0) or 255
 		local green = val < config[2].v and max(floor((val - config[3].v) / (config[2].v - config[3].v) * 255), 0) or 255
 		data.bc = rgb(red, green, 60)
 		data.bl = val
 	end
-	lcd.drawGauge(0, TOP + 39, X1 - 3, 8, min(max(val - config[3].v + 0.1, 0) * (100 / (4.2 - config[3].v + 0.1)), 99), 100, data.set_flags(0, data.bc))
+	lcd.drawGauge(0, TOP + 45, X1 - 3, 8, min(max(val - config[3].v + 0.1, 0) * (100 / (4.2 - config[3].v + 0.1)), 99), 100, data.set_flags(0, data.bc))
 
 	tmp = (not data.telem or data.rssi < data.rssiLow) and RED or data.TextColor
 	val = data.showMax and data.rssiMin or data.rssiLast
-	text(X1 - 3, TOP + 51, val .. (data.crsf and "%" or "dB"), data.set_flags(SMLSIZE + RIGHT, tmp))
-	text(0, TOP + 51, data.crsf and "LQ" or "RSSI", data.set_flags(SMLSIZE, data.TextColor))
+	text(X1 - 3, TOP + 59, val .. (data.crsf and "%" or "dB"), data.set_flags(RIGHT, tmp))
+	text(0, TOP + 59, data.crsf and "LQ" or "RSSI", data.set_flags(SMLSIZE, data.TextColor))
 	if data.rl ~= val then
 		local red = val >= data.rssiLow and max(floor((100 - val) / (100 - data.rssiLow) * 255), 0) or 255
 		local green = val < data.rssiLow and max(floor((val - data.rssiCrit) / (data.rssiLow - data.rssiCrit) * 255), 0) or 255
 		data.rc = rgb(red, green, 60)
 		data.rl = val
 	end
-	lcd.drawGauge(0, TOP + 64, X1 - 3, 8, min(val, 99), 100, data.set_flags(0, data.rc))
+	lcd.drawGauge(0, TOP + 74, X1 - 3, 8, min(val, 99), 100, data.set_flags(0, data.rc))
 
 	-- Box 2 (altitude, distance, current)
 	tmp = data.showMax and data.altitudeMax or data.altitude
