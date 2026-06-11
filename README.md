@@ -1,3 +1,13 @@
+## Flysky PA01 specific EdgeTX telemetry script
+
+This is a port of the original iNav OpenTX telemetry script, adapted for the 320x240 resolution of the PA01 screen. It remains compatible with all other types of radios the original script supports.
+
+
+<img width="1397" height="1048" alt="image" src="https://github.com/user-attachments/assets/202dfee8-01f3-49ea-a1f4-eb7b8b11cd43" />
+
+
+
+
 ## INAV Lua Telemetry Flight Status for EdgeTX and OpenTX
 
 ### Smartport and Crossfile radios by various manufacturers.
